@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<title>Mass-Spring Simulation Activity</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
+  #controls { margin: 20px; }
+  canvas { border: 1px solid #ccc; margin: 10px; }
+  .chart-container { width: 80%; margin: auto; }
+  .questions { text-align: left; margin: 20px auto; width: 80%; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+  .questions h2 { color: #333; }
+</style>
+<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
+</head>
+<body>
+<h1>Mass-Spring Simulation (Ideal System)</h1>
+<p>This activity demonstrates how the second-order differential equation <br>
+<em>m d²y/dt² + k y = 0</em> models the motion of a mass on a spring.</p>
+
+<div class='questions'>
+<h2>Guiding Questions:</h2>
+<ol>
+<li>What happens to the oscillation frequency when you increase the mass?</li>
+<li>What happens when you increase the spring constant?</li>
+<li>Compare the simulation to the analytical solution: y(t) = A cos(ωt) + B sin(ωt). How does ω = √(k/m) affect the motion?</li>
+<li>Can you predict the period of oscillation from ω?</li>
+</ol>
+</div>
+
+<div id='controls'>
+  <label>Mass (kg): <input type='range' id='mass' min='0.5' max='5' step='0.1' value='1'></label>
+  <span id='massVal'>1</span><br>
+  <label>Spring Constant (N/m): <input type='range' id='k' min='10' max='100' step='1' value='50'></label>
+  <span id='kVal'>50</span><br>
+  <button onclick='resetSimulation()'>Reset</button>
+</div>
+
+<p><strong>Analytical Solution:</strong> y(t) = A cos(ωt) + B sin(ωt), where ω = √(k/m)</p>
+
+<canvas id='springCanvas' width='300' height='400'></canvas>
+
+<div class='chart-container'>
+  <canvas id='motionChart'></canvas>
+</div>
+
+<script>
+let m = 1, k = 50;
+document.getElementById('mass').oninput = e => { m = parseFloat(e.target.value); document.getElementById('massVal').textContent = m; };
+document.getElementById('k').oninput = e => { k = parseFloat(e.target.value); document.getElementById('kVal').textContent = k; };
+
+let y = 0.2, v = 0, t = 0, dt = 0.02;
+let ctx = document.getElementById('springCanvas').getContext('2d');
+
+const chartCtx = document.getElementById('motionChart').getContext('2d');
+const motionChart = new Chart(chartCtx, {
+  type: 'line',
+  data: { labels: [], datasets: [
+    { label: 'Position (m)', data: [], borderColor: 'blue', fill: false },
+    { label: 'Velocity (m/s)', data: [], borderColor: 'green', fill: false },
+    { label: 'Acceleration (m/s²)', data: [], borderColor: 'red', fill: false }
+  ]},
+  options: { animation: false, scales: { x: { title: { display: true, text: 'Time (s)' } } } }
+});
+
+function drawSpring() {
+  ctx.clearRect(0, 0, 300, 400);
+  ctx.beginPath();
+  ctx.moveTo(150, 0);
+  ctx.lineTo(150, 100 + y * 200);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(150, 100 + y * 200, 20, 0, Math.PI * 2);
+  ctx.fillStyle = 'gray';
+  ctx.fill();
+}
+
+function update() {
+  let a = -(k * y) / m; // acceleration from ODE
+  v += a * dt;
+  y += v * dt;
+  t += dt;
+
+  drawSpring();
+
+  if (motionChart.data.labels.length > 200) {
+    motionChart.data.labels.shift();
+    motionChart.data.datasets.forEach(ds => ds.data.shift());
+  }
+  motionChart.data.labels.push(t.toFixed(2));
+  motionChart.data.datasets[0].data.push(y);
+  motionChart.data.datasets[1].data.push(v);
+  motionChart.data.datasets[2].data.push(a);
+  motionChart.update();
+
+  requestAnimationFrame(update);
+}
+
+function resetSimulation() {
+  y = 0.2; v = 0; t = 0;
+  motionChart.data.labels = [];
+  motionChart.data.datasets.forEach(ds => ds.data = []);
+}
+
+drawSpring();
+update();
+</script>
+</body>
+</html>
